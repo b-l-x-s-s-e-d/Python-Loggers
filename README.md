@@ -26,14 +26,10 @@ This webhook is where the data will be sent.
 3. Click the server name (top-left).
 4. Select **Server Settings**.
 
----
-
 ### 2. Go to Integrations
 
 1. In the left sidebar, click **Integrations**.
 2. Click **Webhooks**.
-
----
 
 ### 3. Create the Webhook
 
