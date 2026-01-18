@@ -61,11 +61,11 @@ https://discord.com/api/webhooks/123456789012345678/ABCDEF...
 
 2. Press:
 
-CTRL + F
+`CTRL + F`
 
 3. Search for:
 
-"YOUR WEBHOOK HERE"
+`"YOUR WEBHOOK HERE"`
 
 4. Replace it with your webhook URL.
 
