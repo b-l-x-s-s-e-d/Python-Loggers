@@ -12,7 +12,7 @@ Follow each step carefully - it takes less than 2 minutes
 2. Click the file you want to use
 3. Press **Download** or **Raw → Save As**
 4. Save the file somewhere easy to find (Desktop is fine)
-### What Each File Does
+#### What Each File Does
 - **Info Logger:** Logs the victim's info like approximate location, IP, Device Name, etc.
 - **Site Logger:** Logs the victim's top 10 visited sites in the past month
 - **WiFi Password Logger:** Logs the victim's WiFi name and password
