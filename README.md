@@ -8,10 +8,11 @@ Follow each step carefully - it takes less than 2 minutes
 
 ## 📦 Step 1 -- Download All Requirements
 
-1. Press: `🪟 + R`
-2. Type: `CMD`
-3. Run this command to download requirements: `pip install requests psutil pyperclip pillow`
-4. Wait until all requirements are successfully downloaded
+1. Install the **latest Python version**
+2. Press: `🪟 + R`
+3. Type: `CMD`
+4. Run this command to download requirements: `pip install requests psutil pyperclip pillow`
+5. Wait until all requirements are successfully downloaded
 
 ---
 
