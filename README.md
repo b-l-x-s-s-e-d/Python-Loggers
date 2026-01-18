@@ -4,6 +4,8 @@ This guide explains how to set up the Python logger quickly and correctly
 
 Follow each step carefully - it takes less than 2 minutes
 
+---
+
 ## 📦 Step 1 -- Download All Requirements
 
 1. Press: `🪟 + R`
