@@ -1,4 +1,4 @@
-# 🕵️ Python Logger Setup Guide
+# 🕵️ Python Loggers Setup Guide
 
 This guide explains how to set up the Python logger quickly and correctly
 
