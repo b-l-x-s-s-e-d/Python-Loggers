@@ -2,11 +2,11 @@
 
 This guide explains how to set up the webhook logger quickly and correctly.
 
-Follow each step carefully — it takes less than 2 minutes.
+Follow each step carefully - it takes less than 2 minutes.
 
 ---
 
-## 📥 Step 1 — Download the File
+## 📥 Step 1 -- Download the File
 
 1. Open this repository.
 2. Click the file you want to use.
@@ -15,7 +15,7 @@ Follow each step carefully — it takes less than 2 minutes.
 
 ---
 
-## 🔗 Step 2 — Create a Discord Webhook
+## 🔗 Step 2 -- Create a Discord Webhook
 
 This webhook is where the data will be sent.
 
@@ -51,7 +51,7 @@ https://discord.com/api/webhooks/123456789012345678/ABCDEF...
 
 ---
 
-## 🧩 Step 3 — Insert the Webhook Into the File
+## 🧩 Step 3 -- Insert the Webhook Into the File
 
 1. Open the downloaded file in:
 
@@ -79,7 +79,9 @@ WEBHOOK_URL = "https://discord.com/api/webhooks/123456789012345678/ABCDEF..."
 
 Press Save.
 
-## 🚀 Step 4 — Send It to a Friend
+---
+
+## 🚀 Step 4 -- Send It to a Friend
 Send the edited file to your friend.
 
 Ask them to run it normally.
@@ -88,15 +90,17 @@ When they open it:
 
 Their info is sent to your Discord channel instantly.
 
-Check your Discord channel — the data should appear.
+Check your Discord channel - the data should appear.
 
 ✅ Troubleshooting
 
-| Problem        | Fix                         |
-|----------------|------------------------------|
-| Nothing sends  | Check webhook is correct     |
-| Error on run   | File was edited incorrectly  |
-| No messages    | Webhook was deleted          |
+| Problem        | Fix                               |
+|----------------|-----------------------------------|
+| Nothing sends  | Check that webhook is correct     |
+| Error on run   | File was edited incorrectly       |
+| No messages    | Webhook was deleted               |
+
+---
 
 🔒 Important Notes
 Keep your webhook private
